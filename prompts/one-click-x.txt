@@ -1,4 +1,4 @@
-读取并执行这个仓库：https://github.com/OWNER/x-feed-control
+读取并执行这个仓库：https://github.com/h1-qyq/x-feed-control
 
 只操作 X，不操作 YouTube。使用我当前已登录的浏览器，不要只给我教程。
 
