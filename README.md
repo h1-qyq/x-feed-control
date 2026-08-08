@@ -7,7 +7,7 @@
 把这个仓库地址复制给 Codex，然后发送：
 
 ```text
-读取并执行这个仓库：https://github.com/OWNER/x-feed-control
+读取并执行这个仓库：https://github.com/h1-qyq/x-feed-control
 使用我当前已登录的浏览器，只操作 X。先按仓库规则审计，再自动完成安全设置；涉及静音、屏蔽、删除、批量取关或其他不可逆动作时，先给我精确清单并只确认一次。
 ```
 
