@@ -1,43 +1,74 @@
 # X Feed Control
 
-一个只针对 X（Twitter）的浏览器控制 Skill：把“重复推荐、同一作者刷屏、For You 信息茧房”变成可审计、可撤销、可复查的设置流程。
+一个供 Codex 使用的 X（Twitter）浏览器 Skill。它先审计 Home 时间线的
+重复和集中情况，再把时间线切换到 X 已提供的 Following 入口，帮助用户减少站外
+推荐带来的重复输入。
 
-## 给普通用户的一句话
+它不是 X 推荐算法的替代实现，也不会修改服务器端排序模型。仓库提供的是一份
+可审计的浏览器执行契约：代理应读取规则、使用当前已登录的浏览器、验证每次写
+操作的结果，并在无法验证时明确报告受阻。
 
-把这个仓库地址复制给 Codex，然后发送：
+## 直接使用
+
+将下面这句话复制给 Codex：
 
 ```text
 读取并执行这个仓库：https://github.com/h1-qyq/x-feed-control
-使用我当前已登录的浏览器，只操作 X。先按仓库规则审计，再自动完成安全设置；涉及静音、屏蔽、删除、批量取关或其他不可逆动作时，先给我精确清单并只确认一次。
+只操作 X，使用我当前已登录的浏览器。先读取仓库规则并审计时间线，再执行安全设置；
+任何静音、屏蔽、删除或账号关系修改，都先列出准确对象并在提交前只确认一次。
 ```
 
-把 `OWNER` 换成仓库实际所有者。仓库还提供可直接复制的 [一键提示词](prompts/one-click-x.txt)。
+运行前提：当前浏览器中已经登录 X，并且 Codex 能控制这个浏览器页面。这个仓库
+不提供登录流程，也不收集密码、Cookie、Token、localStorage 或浏览历史。
 
-## 仓库里有什么
+## 实际包含的能力
 
-- [`SKILL.md`](SKILL.md)：给 Codex/浏览器代理读取的执行契约。
-- [`prompts/one-click-x.txt`](prompts/one-click-x.txt)：新手直接复制的提示词。
-- [`docs/research.md`](docs/research.md)：X 公开架构和可验证的优化原则。
-- [`docs/safety.md`](docs/safety.md)：权限边界、撤销点和失败恢复。
-- [`tests/acceptance.md`](tests/acceptance.md)：验收标准，防止代理只写教程或乱改账号。
+- 只读检查 Home 中可见的至少 20 条内容（不足时报告实际数量），记录作者、主题、
+  来源和精确/近似重复标记。
+- 在数据足够时报告作者集中度、主题集中度、重复率，以及 Following 与站外推荐的
+  比例。
+- 将 Home 切换到 X 页面上可见的 Following（正在关注）时间线，并重新读取页面验证
+  选中状态。
+- 在用户明确指定已有 List 时打开该 List；不会擅自创建 List。
+- 对静音、屏蔽、不感兴趣或其他关系修改先生成对象清单；重复出现本身不会生成取关
+  名单，批量取关永远不执行。
 
-## 重要边界
+## 明确不做的事
 
-这不是“破解 X 服务器算法”，也不会模拟点赞、转发、关注或取消关注来操纵推荐。它只调节用户可见的入口、设置和明确反馈，并在每个写操作后重新读取页面验证状态。X 官方明确禁止自动化主动关注和取消关注，因此本项目永远不做批量取关。
+本项目不会自动点赞、回复、转发、发帖、关注、取关、订阅、批量修改账号关系、清除
+历史或重置推荐，也不会模拟互动来“训练”推荐系统。它只使用 X 页面可见的入口和
+当前设置；如果页面状态、登录状态或写操作无法验证，结果应报告为 Blocked，而不
+是猜测完成。
 
-## 当前版本
+## 仓库文件
 
-目标平台：X Web。YouTube 已明确砍掉，不在本仓库范围内。
+- [`SKILL.md`](SKILL.md)：Codex 执行契约和浏览器操作边界。
+- [`prompts/one-click-x.txt`](prompts/one-click-x.txt)：可直接复制的一键提示词。
+- [`docs/research.md`](docs/research.md)：X 公开资料、研究假设和可验证的操作原则。
+- [`docs/safety.md`](docs/safety.md)：登录中断、界面改版和不可逆操作的安全边界。
+- [`tests/acceptance.md`](tests/acceptance.md)：人工验收清单，不是自动化测试套件。
+- [`publish.ps1`](publish.ps1)：维护者用 GitHub CLI 创建并首次推送仓库的脚本；已有
+  `origin` 的克隆仓库不应重复运行。
 
-这是一个浏览器 Skill/执行契约，不收集密码、Cookie、令牌、localStorage 或浏览历史。
+## 开发与检查
 
-## 发布到你的 GitHub
-
-如果当前 Codex 没有 GitHub 写权限，在仓库目录执行：
+仓库没有 `package.json`、Python 包、构建产物或运行时依赖。修改文档或执行契约后，
+至少检查：
 
 ```powershell
-gh auth login
-./publish.ps1
+git diff --check
+git status --short
 ```
 
-脚本会创建一个公开仓库 `x-feed-control`、推送当前 `main` 分支，并打印最终 URL。它不会读取或保存你的 GitHub token。
+然后按 [`tests/acceptance.md`](tests/acceptance.md) 逐项复核。需要验证浏览器行为时，
+必须在一个已登录的 X 会话中进行；不要把真实凭据写入仓库或命令行参数。
+
+## 当前状态
+
+这是一个面向 X 的小型、文档驱动 Skill，重点是降低推荐输入的集中度并保留用户确认
+边界。它目前不支持 YouTube，也不承诺消除所有重复内容；Following 只能减少站外
+候选输入，不能改写 X 的服务器端推荐模型。
+
+## 许可证
+
+本项目使用 [MIT License](LICENSE)。
